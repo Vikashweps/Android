@@ -18,30 +18,32 @@ class Player : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var currentTrackIndex = 0
 
-    // Список треков и их названий (можно брать из ресурсов или метаданных)
-    private val tracks = listOf(R.raw.test1, R.raw.test2)
-    private val trackNames = listOf("Можно я с тобой ", "Король и Шут") // Замените на реальные названия
 
-    // UI элементы
+    private val tracks = listOf(R.raw.test1, R.raw.test2)
+    private val trackNames = listOf("Можно я с тобой ", "Король и Шут")
+
+
     private lateinit var btnPlayStop: Button
     private lateinit var seekTime: SeekBar
     private lateinit var seekVolume: SeekBar
     private lateinit var timerTextView: TextView
     private lateinit var songNameTextView: TextView
-
+    private lateinit var GoToMain1: Button
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.player)
 
+        GoToMain1 = findViewById(R.id.prevV)
+
+        GoToMain1.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+        }
         initViews()
         initMediaPlayer()
         setupListeners()
     }
-    // Инициализация UI элементов
-
-
     private fun initViews() {
         btnPlayStop = findViewById(R.id.playstop)
         seekTime = findViewById(R.id.time)
@@ -57,7 +59,7 @@ class Player : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        // Кнопка Play/Stop
+
         btnPlayStop.setOnClickListener {
             if (mediaPlayer.isPlaying) {
                 pauseMusic()
@@ -66,7 +68,7 @@ class Player : AppCompatActivity() {
             }
         }
 
-        // Громкость
+
         seekVolume.max = 100
         seekVolume.progress = 50
         mediaPlayer.setVolume(0.5f, 0.5f)

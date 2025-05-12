@@ -24,11 +24,9 @@ class Calc : AppCompatActivity() {
             insets
         }
 
-
         bGoToMain1 = findViewById(R.id.prevC)
         result = findViewById(R.id.textv1)
 
-        // Настройка кнопки перехода
         bGoToMain1.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
@@ -53,7 +51,6 @@ class Calc : AppCompatActivity() {
             }
         }
 
-        // Настройка операторов
         val operatorButtons = listOf<Pair<Int, String>>(
             R.id.buttonPlus to "+",
             R.id.buttonMinus to "-",
@@ -67,12 +64,10 @@ class Calc : AppCompatActivity() {
             }
         }
 
-        // Кнопка очистки
         findViewById<Button>(R.id.buttonC).setOnClickListener {
             result.text = ""
         }
 
-        // Кнопка расчета
         findViewById<Button>(R.id.buttonItog).setOnClickListener {
             try {
                 val expression = result.text.toString().replace("×", "*")
@@ -157,26 +152,21 @@ class Calc : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Дополнительные действия при старте активности
     }
 
     override fun onResume() {
         super.onResume()
-        // Дополнительные действия при возобновлении активности
     }
 
     override fun onPause() {
         super.onPause()
-        // Дополнительные действия при паузе
+
     }
 
     override fun onStop() {
         super.onStop()
-        // Дополнительные действия при остановке
     }
-
     override fun onDestroy() {
         super.onDestroy()
-        // Дополнительные действия при уничтожении
     }
 }
