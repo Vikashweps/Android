@@ -12,6 +12,7 @@ class MainActivity : AppCompatActivity() {
     private var log_tag : String = "MY_LOG_TAG"
     private lateinit var bGoToCalc: Button
     private lateinit var bGoToPlayer: Button
+    private lateinit var bGoToLocation: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +26,8 @@ class MainActivity : AppCompatActivity() {
 
         bGoToCalc = findViewById<Button>(R.id.calc)
         bGoToPlayer = findViewById<Button>(R.id.player)
+        bGoToLocation = findViewById<Button>(R.id.location)
+
     }
 
     override fun onStart() {
@@ -35,13 +38,17 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         Log.d (log_tag, "onResume method")
         bGoToCalc.setOnClickListener({
-
             val randomIntent = Intent(this, Calc::class.java)
 
             startActivity(randomIntent)
         });
         bGoToPlayer.setOnClickListener({
             val randomIntent = Intent(this, Player::class.java)
+            startActivity(randomIntent)
+        });
+
+        bGoToLocation.setOnClickListener({
+            val randomIntent = Intent(this, Locations::class.java)
             startActivity(randomIntent)
         });
     }

@@ -11,24 +11,36 @@
         android:id="@+id/calc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="204dp"
-        android:layout_marginEnd="156dp"
-        android:layout_marginBottom="25dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginBottom="20dp"
         android:text="калькулятор"
         app:layout_constraintBottom_toTopOf="@+id/player"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/player"
-        android:layout_width="91dp"
+        android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginEnd="15dp"
-        android:layout_marginBottom="404dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="23dp"
         android:text="плеер"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/calc"
+        app:layout_constraintBottom_toTopOf="@+id/location"
+        app:layout_constraintEnd_toEndOf="@+id/location"
+        app:layout_constraintStart_toStartOf="@+id/calc"
         app:layout_constraintTop_toBottomOf="@+id/calc" />
+
+    <Button
+        android:id="@+id/location"
+        android:layout_width="137dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginBottom="514dp"
+        android:text="геопозиция"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/player" />
 </androidx.constraintlayout.widget.ConstraintLayout>
 
 
