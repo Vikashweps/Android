@@ -1,4 +1,5 @@
 package com.example.progect
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -9,10 +10,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
-    private var log_tag : String = "MY_LOG_TAG"
+    private var log_tag: String = "MY_LOG_TAG"
     private lateinit var bGoToCalc: Button
     private lateinit var bGoToPlayer: Button
     private lateinit var bGoToLocation: Button
+    private lateinit var bGoToSoket: Button  // Добавлена отсутствующая переменная
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,49 +26,61 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        bGoToCalc = findViewById<Button>(R.id.calc)
-        bGoToPlayer = findViewById<Button>(R.id.player)
-        bGoToLocation = findViewById<Button>(R.id.location)
+        // Инициализация кнопок
+        bGoToCalc = findViewById(R.id.calc)
+        bGoToPlayer = findViewById(R.id.player)
+        bGoToLocation = findViewById(R.id.location)
+        bGoToSoket = findViewById(R.id.soket)  // Исправлен ID - должно соответствовать XML
 
+        // Установка обработчиков кликов (лучше делать в onCreate)
+        setupClickListeners()
+    }
+
+    private fun setupClickListeners() {
+        bGoToCalc.setOnClickListener {
+            val intent = Intent(this, Calc::class.java)
+            startActivity(intent)
+        }
+
+        bGoToPlayer.setOnClickListener {
+            val intent = Intent(this, Player::class.java)
+            startActivity(intent)
+        }
+
+        bGoToLocation.setOnClickListener {
+            val intent = Intent(this, Locations::class.java)
+            startActivity(intent)
+        }
+
+        bGoToSoket.setOnClickListener {
+            val intent = Intent(this, Soket::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        Log.d (log_tag, "onStart method")
+        Log.d(log_tag, "onStart method")
     }
+
     override fun onResume() {
         super.onResume()
-        Log.d (log_tag, "onResume method")
-        bGoToCalc.setOnClickListener({
-            val randomIntent = Intent(this, Calc::class.java)
-
-            startActivity(randomIntent)
-        });
-        bGoToPlayer.setOnClickListener({
-            val randomIntent = Intent(this, Player::class.java)
-            startActivity(randomIntent)
-        });
-
-        bGoToLocation.setOnClickListener({
-            val randomIntent = Intent(this, Locations::class.java)
-            startActivity(randomIntent)
-        });
+        Log.d(log_tag, "onResume method")
+        // Убрана установка обработчиков из onResume
     }
 
     override fun onPause() {
         super.onPause()
-        Log.d (log_tag, "onPause method")
+        Log.d(log_tag, "onPause method")
     }
 
     override fun onStop() {
         super.onStop()
-        Log.d (log_tag, "onStop method")
+        Log.d(log_tag, "onStop method")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d (log_tag, "onDestroy method")
+        Log.d(log_tag, "onDestroy method")
     }
-
-
 }
