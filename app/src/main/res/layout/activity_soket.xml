@@ -6,6 +6,13 @@
     android:padding="16dp">
 
     <Button
+        android:id="@+id/btnStartServer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Start Server" />
+
+    <Button
         android:id="@+id/btnStartClient"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

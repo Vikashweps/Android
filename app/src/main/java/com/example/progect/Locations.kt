@@ -1,5 +1,6 @@
 package com.example.progect
-
+import java.io.File
+import java.io.FileWriter
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -11,25 +12,30 @@ import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.google.android.gms.location.*
-
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class Locations : AppCompatActivity() {
 
-    private lateinit var GoToBack: Button
+    private lateinit var goToBack: Button
+    private lateinit var location: Button
     private lateinit var tvLatitude: TextView
     private lateinit var tvLongitude: TextView
     private lateinit var tvAltitude: TextView
     private lateinit var tvTime: TextView
-    //private lateinit var data: Button
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
@@ -40,88 +46,65 @@ class Locations : AppCompatActivity() {
         private const val LOG_TAG = "LOCATION_ACTIVITY"
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_locations)
-        enableEdgeToEdge()
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
-
-        GoToBack = findViewById(R.id.Back)
-        tvLatitude = findViewById(R.id.textView5)
-        tvLongitude = findViewById(R.id.textView6)
-        tvAltitude = findViewById(R.id.textView7)
-        tvTime = findViewById(R.id.textView8)
-        //data = findViewById(R.id.bdata)
-
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        setupLocationRequest()
-        setupBackButton()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (checkPermissions()) {
-            startLocationUpdates()
+    @SuppressLint("MissingPermission")
+    private fun getLastKnownLocation() {
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            location?.let { updateUI(it) }
         }
     }
 
-    override fun onPause() {
-        super.onPause()
-        stopLocationUpdates()
-    }
+
 
     private fun setupLocationRequest() {
-        locationRequest = LocationRequest.create().apply {
-            interval = 5000
-            fastestInterval = 2000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000)
+            .setMinUpdateIntervalMillis(2000).build()
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 locationResult.lastLocation?.let { location ->
                     updateUI(location)
+                } ?: run {
+                    Log.w(LOG_TAG, "onLocationResult: lastLocation is null")
                 }
             }
         }
     }
 
+
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        if (checkPermissions() && isLocationEnabled()) {
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-        } else {
+        if (!checkPermissions()) {
             requestPermissions()
+            return
         }
+        if (!isLocationEnabled()) {
+            Toast.makeText(this, "Геолокация отключена", Toast.LENGTH_SHORT).show()
+            location.visibility = View.VISIBLE
+            return
+        }
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
     }
 
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
-
     private fun updateUI(location: Location) {
-        runOnUiThread {
-            tvLatitude.text = " ${"%.6f".format(location.latitude)}"
-            tvLongitude.text = " ${"%.6f".format(location.longitude)}"
-            tvAltitude.text = " ${"%.1f".format(location.altitude)} м"
-            tvTime.text = " ${java.text.SimpleDateFormat("HH:mm:ss").format(location.time)}"
-        }
+
+        tvLatitude.text = " ${"%.6f".format(location.latitude)}"
+        tvLongitude.text = " ${"%.6f".format(location.longitude)}"
+        tvAltitude.text = " ${"%.1f".format(location.altitude)} м"
+        val currentTime = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis())
+        tvTime.text = "Now: $currentTime"
     }
 
-
     private fun setupBackButton() {
-        GoToBack.setOnClickListener {
+        goToBack.setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
@@ -139,6 +122,7 @@ class Locations : AppCompatActivity() {
     }
 
     private fun requestPermissions() {
+        Log.d(LOG_TAG, "Запрашиваем разрешения на геолокацию")
         ActivityCompat.requestPermissions(
             this,
             arrayOf(
@@ -168,5 +152,44 @@ class Locations : AppCompatActivity() {
         val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("MY_LOG_TAG", "Locations onCreate")
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_locations)
+        enableEdgeToEdge()
+
+        goToBack = findViewById(R.id.Back)
+        tvLatitude = findViewById(R.id.textView5)
+        tvLongitude = findViewById(R.id.textView6)
+        tvAltitude = findViewById(R.id.textView7)
+        tvTime = findViewById(R.id.textView8)
+        location = findViewById<Button>(R.id.location)
+
+        location.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+        }
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        setupLocationRequest()
+        setupBackButton()
+    }
+    override fun onResume() {
+        super.onResume()
+        if (checkPermissions()) {
+            getLastKnownLocation()
+            startLocationUpdates()
+        } else {
+            requestPermissions()
+        }
+
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d("MY_LOG_TAG", "onStop method")
+        stopLocationUpdates()
     }
 }

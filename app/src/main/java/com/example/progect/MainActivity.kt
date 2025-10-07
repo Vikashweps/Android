@@ -14,7 +14,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bGoToCalc: Button
     private lateinit var bGoToPlayer: Button
     private lateinit var bGoToLocation: Button
-    private lateinit var bGoToSoket: Button  // Добавлена отсутствующая переменная
+    private lateinit var bGoToSoket: Button
+    private lateinit var bGoToSave: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,9 +31,9 @@ class MainActivity : AppCompatActivity() {
         bGoToCalc = findViewById(R.id.calc)
         bGoToPlayer = findViewById(R.id.player)
         bGoToLocation = findViewById(R.id.location)
-        bGoToSoket = findViewById(R.id.soket)  // Исправлен ID - должно соответствовать XML
+        bGoToSoket = findViewById(R.id.soket)
+        bGoToSave = findViewById(R.id.saveLocation)
 
-        // Установка обработчиков кликов (лучше делать в onCreate)
         setupClickListeners()
     }
 
@@ -47,13 +48,17 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        bGoToLocation.setOnClickListener {
+        /*bGoToLocation.setOnClickListener {
             val intent = Intent(this, Locations::class.java)
             startActivity(intent)
-        }
+        }*/
 
-        bGoToSoket.setOnClickListener {
+        /*bGoToSoket.setOnClickListener {
             val intent = Intent(this, Soket::class.java)
+            startActivity(intent)
+        }*/
+        bGoToSave.setOnClickListener {
+            val intent = Intent(this, Save_locations::class.java)
             startActivity(intent)
         }
     }
@@ -66,7 +71,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         Log.d(log_tag, "onResume method")
-        // Убрана установка обработчиков из onResume
     }
 
     override fun onPause() {

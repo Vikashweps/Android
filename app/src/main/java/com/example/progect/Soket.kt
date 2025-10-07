@@ -30,22 +30,20 @@ class Soket : AppCompatActivity() {
 
         tvSockets = findViewById(R.id.tvsoket)
         btnStartClient = findViewById(R.id.btnStartClient)
-        //btnStartServer = findViewById(R.id.btnStartServer)
+        btnStartServer = findViewById(R.id.btnStartServer)
         handler = Handler(Looper.getMainLooper())
-
         setupButtonListeners()
     }
-
     private fun setupButtonListeners() {
         btnStartServer.setOnClickListener {
             if (!isServerRunning) {
                 Log.d(log_tag, "Starting server...")
                 startServer()
-                btnStartServer.text = "Stop Server"
+                //btnStartServer.text = "Stop Server"
             } else {
                 Log.d(log_tag, "Stopping server...")
                 stopServer()
-                btnStartServer.text = "Start Server"
+                //btnStartServer.text = "Start Server"
             }
         }
 
@@ -109,25 +107,24 @@ class Soket : AppCompatActivity() {
         serverThread?.start()
     }
 
-    fun startClient() {
+    private fun startClient() {
         isClientRunning = true
         clientThread = Thread {
             Log.d(log_tag, "[CLIENT THREAD] Client thread started")
+            val context = ZContext()
+            val socket = context.createSocket(SocketType.REQ)
+
             try {
-                val context = ZContext()
-                val socket = context.createSocket(SocketType.REQ)
-
-                val serverAddress = "tcp://192.168.0.103:5555"
+                val serverAddress = "tcp://172.20.10.3:5555"
                 socket.connect(serverAddress)
-                Log.d(log_tag, "[CLIENT] Connected to $serverAddress")
+                Log.d(log_tag, "[CLIENT] Connected to $socket.connect(serverAddress)")
 
-                handler.post {
-                    tvSockets.text = " Подключено к $serverAddress\n⏳ Ожидаю ответа..."
+                runOnUiThread {
+                    tvSockets.text = "Подключено к $serverAddress\n Ожидаю ответа..."
                 }
 
                 var messageCount = 0
-
-                while (isClientRunning && messageCount < 10) {
+                while (isClientRunning && messageCount < 100 && !Thread.currentThread().isInterrupted) {
                     try {
                         val message = "Hello from Android! Count: ${++messageCount}"
                         socket.send(message.toByteArray(ZMQ.CHARSET), 0)
@@ -138,46 +135,51 @@ class Soket : AppCompatActivity() {
                             val response = String(reply, ZMQ.CHARSET)
                             Log.d(log_tag, "[CLIENT] Received: $response")
 
-                            handler.post {
-                                tvSockets.text = "Отправлено: $message\n📥 Получено: $response\n Попытка: $messageCount"
+                            runOnUiThread {
+                                tvSockets.text = "Отправлено: $message\n Получено: $response\nПопытка: $messageCount"
                             }
                         } else {
                             Log.e(log_tag, "[CLIENT] No reply from server")
-                            handler.post {
-                                tvSockets.text = " Нет ответа от сервера\n Попытка: $messageCount"
+                            runOnUiThread {
+                                tvSockets.text = "Нет ответа от сервера\nПопытка: $messageCount"
                             }
                         }
-
                         Thread.sleep(1000)
+                    } catch (e: InterruptedException) {
+                        Log.d(log_tag, "[CLIENT] Thread interrupted")
+                        break
                     } catch (e: Exception) {
                         Log.e(log_tag, "[CLIENT] Send/receive error: ${e.message}")
-                        handler.post {
-                            tvSockets.text = "⚠Ошибка: ${e.message}\n Попытка: $messageCount"
+                        runOnUiThread {
+                            tvSockets.text = "Ошибка: ${e.message}\nПопытка: $messageCount"
                         }
                     }
                 }
-
-                socket.close()
-                context.close()
-                isClientRunning = false
-                Log.d(log_tag, "[CLIENT] Socket and context closed")
-
-                handler.post {
-                    btnStartClient.text = "Start Client"
-                    tvSockets.append("\nКлиент остановлен")
-                }
             } catch (e: Exception) {
                 Log.e(log_tag, "[CLIENT] Setup error: ${e.message}")
-                handler.post {
-                    tvSockets.text = "Не удалось подключиться\n"
+                runOnUiThread {
+                    tvSockets.text = "Не удалось подключиться: ${e.message}"
                     btnStartClient.text = "Start Client"
                 }
             } finally {
+                try {
+                    socket.close()
+                    context.close()
+                    Log.d(log_tag, "[CLIENT] Socket and context closed")
+                } catch (e: Exception) {
+                    Log.e(log_tag, "[CLIENT] Error closing resources: ${e.message}")
+                }
+                isClientRunning = false
+                runOnUiThread {
+                    btnStartClient.text = "Start Client"
+                    tvSockets.append("\nКлиент остановлен")
+                }
                 Log.d(log_tag, "[CLIENT THREAD] Client thread finished")
             }
         }
         clientThread?.start()
     }
+
 
     fun stopServer() {
         Log.d(log_tag, "stopServer() called")
