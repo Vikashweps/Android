@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
@@ -7,62 +8,68 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- Первый ряд кнопок -->
+    <!-- Верхний ряд -->
     <Button
         android:id="@+id/calc"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="32dp"
+        android:layout_margin="8dp"
         android:text="калькулятор"
-        app:layout_constraintEnd_toStartOf="@+id/player"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/player"
+        app:layout_constraintHorizontal_chainStyle="spread" />
 
     <Button
         android:id="@+id/player"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="15dp"
+        android:layout_margin="8dp"
         android:text="плеер"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toEndOf="@+id/calc"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Второй ряд кнопок -->
+    <!-- Средний ряд -->
     <Button
         android:id="@+id/location"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="32dp"
+        android:layout_margin="8dp"
         android:text="геопозиция"
-        app:layout_constraintEnd_toStartOf="@+id/soket"
+        app:layout_constraintTop_toBottomOf="@+id/calc"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/calc" />
+        app:layout_constraintEnd_toStartOf="@+id/soket" />
 
     <Button
         android:id="@+id/soket"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="15dp"
+        android:layout_margin="8dp"
         android:text="сокет"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/player"
         app:layout_constraintStart_toEndOf="@+id/location"
-        app:layout_constraintTop_toBottomOf="@+id/player" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Нижний ряд -->
     <Button
         android:id="@+id/saveLocation"
-        android:layout_width="176dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="18dp"
-        android:text="save Location"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Клиент"
+        app:layout_constraintTop_toBottomOf="@+id/location"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/location" />
+        app:layout_constraintEnd_toStartOf="@+id/telephony" />
+
+    <Button
+        android:id="@+id/telephony"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="telephony"
+        app:layout_constraintTop_toBottomOf="@+id/soket"
+        app:layout_constraintStart_toEndOf="@+id/saveLocation"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

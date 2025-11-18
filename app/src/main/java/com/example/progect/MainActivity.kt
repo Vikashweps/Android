@@ -16,6 +16,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bGoToLocation: Button
     private lateinit var bGoToSoket: Button
     private lateinit var bGoToSave: Button
+    private lateinit var bGoToTelephony: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         bGoToLocation = findViewById(R.id.location)
         bGoToSoket = findViewById(R.id.soket)
         bGoToSave = findViewById(R.id.saveLocation)
-
+        bGoToTelephony = findViewById(R.id.telephony)
         setupClickListeners()
     }
 
@@ -48,18 +49,23 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        /*bGoToLocation.setOnClickListener {
+        bGoToLocation.setOnClickListener {
             val intent = Intent(this, Locations::class.java)
             startActivity(intent)
-        }*/
+        }
 
-        /*bGoToSoket.setOnClickListener {
+        bGoToSoket.setOnClickListener {
             val intent = Intent(this, Soket::class.java)
             startActivity(intent)
-        }*/
+        }
         bGoToSave.setOnClickListener {
-            val intent = Intent(this, Save_locations::class.java)
+            val intent = Intent(this, Client::class.java)
             startActivity(intent)
+        }
+        bGoToTelephony.setOnClickListener{
+            val intent = Intent(this, Telephony::class.java)
+            startActivity(intent)
+
         }
     }
 

@@ -10,10 +10,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
-
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -25,7 +24,10 @@
         android:theme="@style/Theme.Progect"
         tools:targetApi="31">
         <activity
-            android:name=".Save_locations"
+            android:name=".Telephony"
+            android:exported="false" />
+        <activity
+            android:name=".Client"
             android:exported="false" />
         <activity
             android:name=".Soket"
