@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         tools:context=".Telephony">
 
-        <!-- Кнопка Назад -->
         <Button
             android:id="@+id/btnBack"
             android:layout_width="wrap_content"
@@ -20,7 +19,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Кнопка Обновить -->
         <Button
             android:id="@+id/btnRefresh"
             android:layout_width="0dp"
@@ -31,7 +29,7 @@
             app:layout_constraintTop_toBottomOf="@+id/btnBack"
             android:layout_marginTop="16dp" />
 
-        <!-- Заголовок мобильной сети -->
+
         <TextView
             android:id="@+id/textView11"
             android:layout_width="0dp"
@@ -42,7 +40,6 @@
             app:layout_constraintTop_toBottomOf="@+id/btnRefresh"
             android:layout_marginTop="24dp" />
 
-        <!-- Тип сети -->
         <TextView
             android:id="@+id/tvNetworkType"
             android:layout_width="0dp"
@@ -54,7 +51,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textView11"
             android:layout_marginTop="8dp" />
 
-        <!-- Оператор -->
+
         <TextView
             android:id="@+id/tvOperator"
             android:layout_width="0dp"
@@ -66,7 +63,7 @@
             app:layout_constraintTop_toBottomOf="@+id/tvNetworkType"
             android:layout_marginTop="4dp" />
 
-        <!-- TAC/LAC -->
+
         <TextView
             android:id="@+id/tvTacLac"
             android:layout_width="0dp"
@@ -78,7 +75,7 @@
             app:layout_constraintTop_toBottomOf="@+id/tvOperator"
             android:layout_marginTop="4dp" />
 
-        <!-- PCI -->
+
         <TextView
             android:id="@+id/tvPci"
             android:layout_width="0dp"
@@ -90,7 +87,7 @@
             app:layout_constraintTop_toBottomOf="@+id/tvTacLac"
             android:layout_marginTop="4dp" />
 
-        <!-- CID -->
+
         <TextView
             android:id="@+id/tvCid"
             android:layout_width="0dp"
@@ -102,7 +99,6 @@
             app:layout_constraintTop_toBottomOf="@+id/tvPci"
             android:layout_marginTop="4dp" />
 
-        <!-- Сигнал -->
         <TextView
             android:id="@+id/tvSignal"
             android:layout_width="0dp"
@@ -114,77 +110,10 @@
             app:layout_constraintTop_toBottomOf="@+id/tvCid"
             android:layout_marginTop="4dp" />
 
-        <!-- ASU -->
-        <TextView
-            android:id="@+id/tvAsu"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="ASU: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvSignal"
-            android:layout_marginTop="4dp" />
 
-        <!-- Дополнительные параметры для LTE -->
-        <TextView
-            android:id="@+id/tvRsrq"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="RSRQ: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvAsu"
-            android:layout_marginTop="4dp" />
 
-        <TextView
-            android:id="@+id/tvRssnr"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="RSSNR: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvRsrq"
-            android:layout_marginTop="4dp" />
 
-        <TextView
-            android:id="@+id/tvCqi"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="CQI: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvRssnr"
-            android:layout_marginTop="4dp" />
 
-        <!-- Частота -->
-        <TextView
-            android:id="@+id/tvFrequency"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Частота: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvCqi"
-            android:layout_marginTop="4dp" />
-
-        <!-- Timing Advance -->
-        <TextView
-            android:id="@+id/tvTimingAdvance"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Timing Advance: -"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvFrequency"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="16dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

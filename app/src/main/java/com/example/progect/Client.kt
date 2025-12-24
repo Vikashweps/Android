@@ -3,15 +3,12 @@ package com.example.progect
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.Settings
 import android.telephony.*
-import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -22,11 +19,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.zeromq.SocketType
 import org.zeromq.ZContext
-import org.zeromq.ZMQ
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 class Client : AppCompatActivity() {
 
@@ -42,14 +37,17 @@ class Client : AppCompatActivity() {
     private lateinit var tvCid: TextView
     private lateinit var tvSignal: TextView
 
+    private lateinit var btnClient: Button
+    private lateinit var btnSaveData: Button
+    private lateinit var btnExit: Button
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var handler: Handler
+    private val handler = Handler(Looper.getMainLooper())
     private val dataRecords = ArrayList<JSONObject>()
     private val dataFile = "collected_data.json"
 
     private var isRecording = false
     private var isClientRunning = false
-    private var isServerRunning = false
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 100
@@ -63,20 +61,16 @@ class Client : AppCompatActivity() {
         setContentView(R.layout.activity_client)
 
         initViews()
-        loadSavedData()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        if (hasAllPermissions() && isLocationEnabled()) {
-            startDataUpdates()
+        if (hasPermissions() && isLocationEnabled()) {
+            startDataCollection()
         } else {
             requestPermissions()
         }
     }
 
     private fun initViews() {
-        handler = Handler(Looper.getMainLooper())
-
-        // Находим все View
         tvStatus = findViewById(R.id.tvStatus)
         tvLatitude = findViewById(R.id.tvLatitud)
         tvLongitude = findViewById(R.id.tvLongitude)
@@ -89,177 +83,167 @@ class Client : AppCompatActivity() {
         tvCid = findViewById(R.id.tvCid)
         tvSignal = findViewById(R.id.tvSignal)
 
-        // Настройка кнопок
-        setupButtons()
+        btnClient = findViewById(R.id.client)
+        btnSaveData = findViewById(R.id.btnSaveData)
+        btnExit = findViewById(R.id.button11)
+
+        btnExit.setOnClickListener { finish() }
+        btnSaveData.setOnClickListener { toggleRecording() }
+        btnClient.setOnClickListener { toggleClient() }
+
+        updateButtons()
         resetNetworkViews()
+        loadSavedData()
     }
 
-    private fun setupButtons() {
-        val buttons = mapOf(
-            R.id.button11 to { finish() },
+    private fun updateButtons() {
+        btnSaveData.text = if (isRecording) "Стоп запись" else "Старт запись"
+        btnClient.text = if (isClientRunning) "Стоп клиент" else "Старт клиент"
+    }
 
-            R.id.client to { toggleClient() },
-            R.id.btnSaveData to { toggleRecording() }
-        )
-
-        buttons.forEach { (id, action) ->
-            findViewById<Button>(id).setOnClickListener { action() }
+    private fun toggleClient() {
+        if (isClientRunning) {
+            stopClient()
+        } else {
+            startClient()
         }
+        updateButtons()
     }
 
-    private fun refreshData() {
-        if (hasAllPermissions()) {
-            getLastKnownLocation()
-            loadCellInfo()
+    private fun saveCurrentData() {
+        try {
+            val record = JSONObject().apply {
+                put("timestamp", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))
+                put("location", JSONObject().apply {
+                    put("latitude", tvLatitude.text.toString().trim())
+                    put("longitude", tvLongitude.text.toString().trim())
+                })
+                put("network", JSONObject().apply {
+                    put("type", tvNetworkType.text.toString().trim())
+                    put("operator", tvOperator.text.toString().trim())
+                    put("tac_lac", tvTacLac.text.toString().trim())
+                    put("pci", tvPci.text.toString().trim())
+                    put("ci", tvCid.text.toString().trim())
+                    put("RSRP", tvSignal.text.toString().trim())
+                })
+            }
+            dataRecords.add(record)
+            saveToFile()
+            setStatus("Записей: ${dataRecords.size}")
+        } catch (e: Exception) {
+            // Игнорируем ошибки
         }
     }
 
     private fun toggleRecording() {
         isRecording = !isRecording
-        updateRecordButton()
-        showToast(if (isRecording) "Автосохранение запущено" else "Автосохранение остановлено")
-        updateStatus("Запись ${if (isRecording) "запущена" else "остановлена"} (${dataRecords.size} записей)")
+        updateButtons()
 
-        if (isRecording) saveCurrentData()
-    }
-
-
-    private fun toggleClient() {
-        if (!isClientRunning) startClient() else stopClient()
-        updateClientButton()
-    }
-
-    private fun updateRecordButton() {
-        findViewById<Button>(R.id.btnSaveData).text = if (isRecording) "Стоп запись" else "Старт запись"
-    }
-
-
-
-    private fun updateClientButton() {
-        findViewById<Button>(R.id.client).text = if (isClientRunning) "Стоп клиент" else "Старт клиент"
-    }
-
-    // JSON функции
-    private fun saveCurrentData() {
-        try {
-            dataRecords.add(createDataObject())
-            saveDataToFile()
-            updateStatus("Данные сохранены (${dataRecords.size} записей)")
-        } catch (e: Exception) {
-            Log.e("APP", "Ошибка сохранения: ${e.message}")
+        if (isRecording) {
+            showToast("Запись запущена")
+            saveCurrentData() // первая запись сразу
+        } else {
+            showToast("Запись остановлена")
+            setStatus("Всего записей: ${dataRecords.size}")
         }
     }
-
-    private fun createDataObject() = JSONObject().apply {
-        put("timestamp", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()))
-        put("location", JSONObject().apply {
-            put("latitude", tvLatitude.text.cleanText())
-            put("longitude", tvLongitude.text.cleanText())
-        })
-        put("network", JSONObject().apply {
-            put("type", tvNetworkType.text.cleanText())
-            put("operator", tvOperator.text.cleanText())
-            put("tac_lac", tvTacLac.text.cleanText())
-            put("pci", tvPci.text.cleanText())
-            put("ci", tvCid.text.cleanText())
-            put("RSRP", tvSignal.text.cleanText())
-        })
-    }
-
-    private fun CharSequence.cleanText() = toString().trim().removePrefix(" ")
-
-    private fun saveDataToFile() {
+    private fun saveToFile() {
         try {
-            File(filesDir, dataFile).writeText(JSONArray(dataRecords).toString(4))
+            File(filesDir, dataFile).writeText(JSONArray(dataRecords).toString())
         } catch (e: Exception) {
-            Log.e("APP", "Ошибка записи файла: ${e.message}")
         }
     }
 
     private fun loadSavedData() {
         try {
-            File(filesDir, dataFile).takeIf { it.exists() }?.readText()?.let { jsonString ->
-                JSONArray(jsonString).let { jsonArray ->
+            val file = File(filesDir, dataFile)
+            if (file.exists()) {
+                val text = file.readText()
+                if (text.isNotBlank()) {
+                    val array = JSONArray(text)
                     dataRecords.clear()
-                    for (i in 0 until jsonArray.length()) {
-                        dataRecords.add(jsonArray.getJSONObject(i))
+                    for (i in 0 until array.length()) {
+                        dataRecords.add(array.getJSONObject(i))
                     }
-                    Log.d("APP", "Загружено ${dataRecords.size} записей")
                 }
             }
         } catch (e: Exception) {
-            Log.e("APP", "Ошибка загрузки: ${e.message}")
         }
     }
 
-    private fun readDataFromFile() = try {
-        File(filesDir, dataFile).takeIf { it.exists() }?.readText() ?: "[]"
-    } catch (e: Exception) {
-        Log.e("APP", "Ошибка чтения: ${e.message}")
-        "[]"
+    private fun readDataAsString(): String {
+        return try {
+            val file = File(filesDir, dataFile)
+            if (file.exists()) file.readText() else "[]"
+        } catch (e: Exception) {
+            "[]"
+        }
     }
 
-    // Обновления данных
-    private fun startDataUpdates() {
-        refreshData()
+    private fun startDataCollection() {
         startLocationUpdates()
-        handler.post(updateTask)
-    }
-
-    private fun stopDataUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
-        handler.removeCallbacks(updateTask)
-    }
-
-    private val updateTask = object : Runnable {
-        override fun run() {
-            loadCellInfo()
-            if (isRecording) saveCurrentData()
-            handler.postDelayed(this, UPDATE_INTERVAL)
-        }
-    }
-
-    // Геолокация
-    @SuppressLint("MissingPermission")
-    private fun getLastKnownLocation() {
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            location?.let { updateLocationUI(it) }
-        }
+        startCellUpdates()
     }
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
-        if (!hasAllPermissions()) return
+        if (!hasPermissions()) return
 
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
-            .setMinUpdateIntervalMillis(UPDATE_INTERVAL).build()
+        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+            .setMinUpdateIntervalMillis(UPDATE_INTERVAL)
+            .build()
 
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+        fusedLocationClient.requestLocationUpdates(request, locationCallback, Looper.getMainLooper())
+        fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+            loc?.let { updateLocationUI(it) }
+        }
     }
 
     private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult) {
-            locationResult.lastLocation?.let { updateLocationUI(it) }
+        override fun onLocationResult(result: LocationResult) {
+            result.lastLocation?.let { updateLocationUI(it) }
         }
     }
 
     private fun updateLocationUI(location: Location) {
-        tvLatitude.text = " ${"%.6f".format(location.latitude)}"
-        tvLongitude.text = " ${"%.6f".format(location.longitude)}"
-        tvAltitude.text = " ${"%.1f".format(location.altitude)} м"
+        tvLatitude.text = "%.6f".format(location.latitude)
+        tvLongitude.text = "%.6f".format(location.longitude)
+        tvAltitude.text = "%.1f м".format(location.altitude)
         tvTime.text = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis())
     }
 
-    // Мобильные сети
+    @SuppressLint("MissingPermission")
+    private fun startCellUpdates() {
+        handler.post(object : Runnable {
+            override fun run() {
+                loadCellInfo()
+                if (isRecording) saveCurrentTimeData()
+                handler.postDelayed(this, UPDATE_INTERVAL)
+            }
+        })
+    }
+
+    private fun saveCurrentTimeData() {
+        tvTime.text = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(System.currentTimeMillis())
+        saveCurrentData()
+    }
+
+    @SuppressLint("MissingPermission")
     private fun loadCellInfo() {
-        if (!hasNetworkPermissions()) return
+        if (!hasPermissions()) {
+            resetNetworkViews()
+            return
+        }
 
         try {
-            (getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
-                .allCellInfo
-                ?.find { it.isRegistered }
-                ?.let { updateNetworkUI(it) }
-                ?: run { resetNetworkViews() }
+            val telephony = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            val cell = telephony.allCellInfo?.find { it.isRegistered }
+
+            if (cell != null) {
+                updateNetworkUI(cell)
+            } else {
+                resetNetworkViews()
+            }
         } catch (e: Exception) {
             resetNetworkViews()
         }
@@ -267,23 +251,31 @@ class Client : AppCompatActivity() {
 
     private fun updateNetworkUI(cell: CellInfo) {
         when (cell) {
-            is CellInfoGsm -> updateCellUI("2G GSM", cell.cellIdentity, cell.cellSignalStrength.dbm)
-            is CellInfoLte -> updateCellUI("4G LTE", cell.cellIdentity, cell.cellSignalStrength.rsrp)
-            is CellInfoWcdma -> updateCellUI("3G WCDMA", cell.cellIdentity, cell.cellSignalStrength.dbm)
-            else -> { /* Для других типов сетей ничего не делаем */ }
+            is CellInfoGsm -> showCellInfo("2G GSM", cell.cellIdentity, cell.cellSignalStrength.dbm)
+            is CellInfoLte -> showCellInfo("4G LTE", cell.cellIdentity, getRsrp(cell.cellSignalStrength))
+            is CellInfoWcdma -> showCellInfo("3G WCDMA", cell.cellIdentity, cell.cellSignalStrength.dbm)
+            else -> resetNetworkViews()
         }
     }
 
-    private fun updateCellUI(type: String, id: CellIdentity, signal: Int) {
-        tvNetworkType.text = " $type"
-        tvOperator.text = " ${getMccMnc(id)}"
-        tvTacLac.text = " ${getTacLac(id).safe()}"
-        tvPci.text = " ${getPci(id).safe()}"
-        tvCid.text = " ${getCid(id).safe()}"
-        tvSignal.text = " ${signal.safeDbm()}"
+    private fun getRsrp(strength: CellSignalStrength): Int {
+        return if (strength is CellSignalStrengthLte) {
+            strength.rsrp
+        } else {
+            CellInfo.UNAVAILABLE
+        }
     }
 
-    private fun getMccMnc(id: CellIdentity): String {
+    private fun showCellInfo(type: String, id: CellIdentity, signal: Int) {
+        tvNetworkType.text = type
+        tvOperator.text = getOperator(id)
+        tvTacLac.text = getTacLac(id).takeIf { it != CellInfo.UNAVAILABLE }?.toString() ?: "-"
+        tvPci.text = getPci(id).takeIf { it != CellInfo.UNAVAILABLE }?.toString() ?: "-"
+        tvCid.text = getCid(id).takeIf { it != CellInfo.UNAVAILABLE }?.toString() ?: "-"
+        tvSignal.text = if (signal == CellInfo.UNAVAILABLE) "-" else "$signal dBm"
+    }
+
+    private fun getOperator(id: CellIdentity): String {
         val mcc = when (id) {
             is CellIdentityGsm -> id.mccString
             is CellIdentityLte -> id.mccString
@@ -296,7 +288,7 @@ class Client : AppCompatActivity() {
             is CellIdentityWcdma -> id.mncString
             else -> null
         }
-        return "${mcc.safeValue()}/${mnc.safeValue()}"
+        return "${mcc ?: "-"}/${mnc ?: "-"}"
     }
 
     private fun getTacLac(id: CellIdentity) = when (id) {
@@ -321,137 +313,108 @@ class Client : AppCompatActivity() {
     }
 
     private fun resetNetworkViews() {
-        tvNetworkType.text = "Тип: -"
-        tvOperator.text = "Оператор: -"
-        tvTacLac.text = "TAC/LAC: -"
-        tvPci.text = "PCI: -"
-        tvCid.text = "CI: -"
-        tvSignal.text = "Уровень сигнала: -"
+        tvNetworkType.text = "-"
+        tvOperator.text = "-"
+        tvTacLac.text = "-"
+        tvPci.text = "-"
+        tvCid.text = "-"
+        tvSignal.text = "-"
     }
 
-    // Вспомогательные функции
-    private fun Int.safe() = if (this == Int.MAX_VALUE || this == CellInfo.UNAVAILABLE) "-" else toString()
-    private fun Int.safeDbm() = if (this == Int.MAX_VALUE || this == CellInfo.UNAVAILABLE) "-" else "$this dBm"
-    private fun String?.safeValue() = if (isNullOrEmpty() || this == "2147483647") "-" else this
-
-    private fun hasAllPermissions() = arrayOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    ).all { ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
-
-    private fun hasNetworkPermissions() =
-        ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
-    private fun requestPermissions() {
-        ActivityCompat.requestPermissions(this, arrayOf(
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        ), PERMISSION_REQUEST_CODE)
+    private fun hasPermissions(): Boolean {
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun isLocationEnabled(): Boolean {
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
-        return locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
-                locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+        val lm = getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
+        return lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+                lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
     }
 
-    private fun updateStatus(message: String) {
-        handler.post { tvStatus.text = message }
+    private fun requestPermissions() {
+        ActivityCompat.requestPermissions(this, arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ), PERMISSION_REQUEST_CODE)
     }
 
-    private fun showToast(message: String) {
-        handler.post { Toast.makeText(this, message, Toast.LENGTH_SHORT).show() }
+    private fun showToast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 
-    // ZeroMQ
+    private fun setStatus(msg: String) {
+        tvStatus.text = msg
+    }
 
     private fun startClient() {
         isClientRunning = true
         Thread {
             try {
-                ZContext().use { context ->
-                    context.createSocket(SocketType.REQ).use { socket ->
-                        socket.connect("tcp://$SERVER_IP:$SERVER_PORT")
-                        socket.sendTimeOut = 5000
-                        socket.receiveTimeOut = 10000
+                ZContext().use { ctx ->
+                    ctx.createSocket(SocketType.REQ).use { sock ->
+                        sock.connect("tcp://$SERVER_IP:$SERVER_PORT")
+                        sock.sendTimeOut = 5000
+                        sock.receiveTimeOut = 10000
 
-                        updateStatus("Подключение к серверу")
+                        setStatus("Отправка данных...")
 
-                        val jsonData = readDataFromFile()
+                        val data = readDataAsString()
+                        if (data == "[]" || data.isEmpty()) {
+                            setStatus("Нет данных")
+                            return@Thread
+                        }
 
-                        if (jsonData != "[]") {
-                            socket.send(jsonData.toByteArray(), 0)
-                            val reply = socket.recv(0)
+                        sock.send(data.toByteArray(), 0)
+                        val reply = sock.recv(0)
 
-                            if (reply != null) {
-                                val response = String(reply)
-                                handler.post {
-                                    // АВТООЧИСТКА после успешной отправки
-                                    if (response.contains("Успешно") || response.contains("OK") ||
-                                        response.contains("получено") || response.contains("записей")) {
-
-                                        val clearedCount = dataRecords.size
-                                        dataRecords.clear()
-                                        saveDataToFile()
-
-                                        updateStatus("Данные отправлены и очищены\nОтправлено: $clearedCount записей\nОтвет: $response")
-                                        Toast.makeText(this@Client, "Данные отправлены ($clearedCount записей)", Toast.LENGTH_SHORT).show()
-
-                                        Log.d("APP", "Автоочистка: отправлено и очищено $clearedCount записей")
-                                    } else {
-                                        updateStatus("Ошибка сервера\nОтвет: $response")
-                                        Toast.makeText(this@Client, "Ошибка сервера", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                        if (reply != null) {
+                            val resp = String(reply)
+                            if (resp.contains("OK") || resp.contains("успешно") || resp.contains("запис")) {
+                                dataRecords.clear()
+                                saveToFile()
+                                setStatus("Отправлено и очищено")
                             } else {
-                                handler.post {
-                                    updateStatus("Нет ответа от сервера")
-                                    Toast.makeText(this@Client, "Нет ответа от сервера", Toast.LENGTH_SHORT).show()
-                                }
+                                setStatus("Ошибка сервера")
                             }
                         } else {
-                            handler.post {
-                                updateStatus("Нет данных для отправки")
-                                Toast.makeText(this@Client, "Нет данных для отправки", Toast.LENGTH_SHORT).show()
-                            }
+                            setStatus("Нет ответа")
                         }
                     }
                 }
             } catch (e: Exception) {
-                handler.post {
-                    updateStatus("Ошибка подключения: ${e.message}")
-                    Toast.makeText(this@Client, "Ошибка отправки", Toast.LENGTH_SHORT).show()
-                }
-                Log.e("APP", "Client error: ${e.message}")
+                setStatus("Ошибка отправки")
             } finally {
                 isClientRunning = false
-                handler.post { findViewById<Button>(R.id.client).text = "Старт клиент" }
+                runOnUiThread { updateButtons() }
             }
         }.start()
     }
 
     private fun stopClient() {
         isClientRunning = false
-        updateStatus("Клиент остановлен")
+        setStatus("Клиент остановлен")
     }
 
-    // Жизненный цикл
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startDataUpdates()
+            startDataCollection()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        if (hasAllPermissions()) startDataUpdates()
+        if (hasPermissions()) {
+            startDataCollection()
+        }
     }
 
-    override fun onPause() = stopDataUpdates()
+    override fun onPause() {
+        super.onPause()
+        fusedLocationClient.removeLocationUpdates(locationCallback)
+    }
+
     override fun onDestroy() {
-        stopDataUpdates()
-        stopClient()
         super.onDestroy()
     }
 }
